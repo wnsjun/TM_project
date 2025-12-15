@@ -15,7 +15,7 @@ export interface AnalyzeResponse {
     found_urls: {
       url: string;
       similarity: number;
-    }[];
+    }[] | null;
   }>;
 }
 

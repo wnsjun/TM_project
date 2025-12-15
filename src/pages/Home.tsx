@@ -43,6 +43,46 @@ function Home() {
 
   const isFormValid = title.trim() !== '' && content.trim() !== '';
 
+  const getScoreColor = (score: number) => {
+    if (score < 0.3) return 'text-green-600';
+    if (score < 0.7) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getScoreBgColor = (score: number) => {
+    if (score < 0.3) return 'bg-green-100 border-green-200';
+    if (score < 0.7) return 'bg-yellow-100 border-yellow-200';
+    return 'bg-red-100 border-red-200';
+  };
+
+  const getProgressBarColor = (score: number) => {
+    if (score < 0.3) return 'bg-green-500';
+    if (score < 0.7) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getCategoryLabel = (key: string) => {
+    const labels: Record<string, string> = {
+      aggro_score: '제목 과장성',
+      mismatch_score: '제목-본문 비일관성',
+      crossref_score: '내용 비신뢰성',
+    };
+    return labels[key] || key;
+  };
+
+  const cleanReason = (reason: string) => {
+    // [디버그 모드] 제거
+    let cleaned = reason.replace(/\[디버그 모드\]\s*/g, '');
+
+    // "1. 요약문:" 부분만 추출
+    const summaryMatch = cleaned.match(/1\.\s*요약문:\s*([^\n]+(?:\n(?!2\.|3\.)[^\n]+)*)/);
+    if (summaryMatch) {
+      return '요약문: ' + summaryMatch[1].trim();
+    }
+
+    return cleaned;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -105,27 +145,115 @@ function Home() {
           )}
 
           {result && (
-            <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">분석 결과</h2>
+            <div className="mt-8 space-y-6">
+              {/* 전체 요약 카드 */}
+              <div className={`p-6 rounded-lg border-2 ${
+                result.final_risk_level === '위험'
+                  ? 'bg-red-50 border-red-300'
+                  : result.final_risk_level === '주의' || result.final_risk_level === '경고'
+                  ? 'bg-yellow-50 border-yellow-300'
+                  : 'bg-green-50 border-green-300'
+              }`}>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">전체 분석 결과</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 font-medium text-lg">위험도 수준:</span>
+                    <span className={`text-2xl font-bold ${
+                      result.final_risk_level === '위험'
+                        ? 'text-red-600'
+                        : result.final_risk_level === '주의' || result.final_risk_level === '경고'
+                        ? 'text-yellow-600'
+                        : 'text-green-600'
+                    }`}>
+                      {result.final_risk_level}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-700 font-medium">위험도 점수</span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {(result.final_risk_score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className={`h-3 rounded-full transition-all ${getProgressBarColor(result.final_risk_score)}`}
+                        style={{ width: `${result.final_risk_score * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 세부 분석 항목 */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">위험도 수준:</span>
-                  <span className={`text-lg font-bold ${
-                    result.final_risk_level === '위험'
-                      ? 'text-red-600'
-                      : result.final_risk_level === '경고'
-                      ? 'text-yellow-600'
-                      : 'text-green-600'
-                  }`}>
-                    {result.final_risk_level}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">위험도 점수:</span>
-                  <span className="text-lg font-bold text-gray-900">
-                    {(result.final_risk_score * 100).toFixed(0)}%
-                  </span>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900">세부 분석</h3>
+                {Object.entries(result.breakdown).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className={`p-5 rounded-lg border ${getScoreBgColor(value.score)}`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        {getCategoryLabel(key)}
+                      </h4>
+                      <span className={`text-xl font-bold ${getScoreColor(value.score)}`}>
+                        {(value.score * 100).toFixed(0)}점
+                      </span>
+                    </div>
+
+                    {/* 프로그레스 바 */}
+                    <div className="w-full bg-white rounded-full h-2 mb-3">
+                      <div
+                        className={`h-2 rounded-full transition-all ${getProgressBarColor(value.score)}`}
+                        style={{ width: `${value.score * 100}%` }}
+                      />
+                    </div>
+
+                    {/* 이유 */}
+                    <div className="mb-2">
+                      <p className="text-sm font-medium text-gray-700 mb-1">분석 이유:</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap bg-white p-3 rounded">
+                        {cleanReason(value.reason)}
+                      </p>
+                    </div>
+
+                    {/* 권장사항 */}
+                    <div className="mb-2">
+                      <p className="text-sm font-medium text-gray-700 mb-1">권장사항:</p>
+                      <p className="text-sm text-gray-800 bg-white p-3 rounded">
+                        {value.recommendation}
+                      </p>
+                    </div>
+
+                    {/* 관련 URL */}
+                    {value.found_urls && value.found_urls.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">관련 기사:</p>
+                        <div className="space-y-2">
+                          {value.found_urls.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between bg-white p-2 rounded text-sm"
+                            >
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline truncate flex-1"
+                              >
+                                {item.url}
+                              </a>
+                              <span className="text-gray-600 ml-2">
+                                유사도: {(item.similarity * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
