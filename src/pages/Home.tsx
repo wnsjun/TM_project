@@ -32,6 +32,17 @@ function Home() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (title.trim() && content.trim() && !loading) {
+        handleSubmit(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
+  const isFormValid = title.trim() !== '' && content.trim() !== '';
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -70,7 +81,8 @@ function Home() {
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="기사 본문을 입력하세요"
+                onKeyDown={handleKeyDown}
+                placeholder="기사 본문을 입력하세요 (Ctrl+Enter로 제출)"
                 rows={12}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
                 required
@@ -79,7 +91,7 @@ function Home() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isFormValid}
               className="cursor-pointer w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {loading ? '분석 중...' : '가이드라인 생성'}
