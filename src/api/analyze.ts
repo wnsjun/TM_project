@@ -20,6 +20,6 @@ export interface AnalyzeResponse {
 }
 
 export const analyzeArticle = async (data: AnalyzeRequest): Promise<AnalyzeResponse> => {
-  const response = await instance.post<AnalyzeResponse>('/api/v1/analyze', data);
+  const response = await instance.post<AnalyzeResponse>('api/v1/analyze', data);
   return response.data;
 };
