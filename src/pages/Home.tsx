@@ -1,13 +1,30 @@
 import { useState } from 'react';
+import { analyzeArticle, AnalyzeResponse } from '../api/analyze';
 
 function Home() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<AnalyzeResponse | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('제목:', title);
-    console.log('본문:', content);
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const data = await analyzeArticle({
+        article_title: title,
+        article_body: content,
+      });
+      setResult(data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || '분석 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,11 +74,44 @@ function Home() {
 
             <button
               type="submit"
-              className="cursor-pointer w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+              disabled={loading}
+              className="cursor-pointer w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              가이드라인 생성
+              {loading ? '분석 중...' : '가이드라인 생성'}
             </button>
           </form>
+
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm">{error}</p>
+            </div>
+          )}
+
+          {result && (
+            <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">분석 결과</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700 font-medium">위험도 수준:</span>
+                  <span className={`text-lg font-bold ${
+                    result.final_risk_level === '위험'
+                      ? 'text-red-600'
+                      : result.final_risk_level === '경고'
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                  }`}>
+                    {result.final_risk_level}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700 font-medium">위험도 점수:</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {(result.final_risk_score * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
