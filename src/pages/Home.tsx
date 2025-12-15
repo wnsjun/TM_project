@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { analyzeArticle, AnalyzeResponse } from '../api/analyze';
+import { analyzeArticle } from '../api/analyze';
+import type { AnalyzeResponse } from '../api/analyze';
 
 function Home() {
   const [title, setTitle] = useState('');
@@ -20,8 +21,12 @@ function Home() {
         article_body: content,
       });
       setResult(data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || '분석 중 오류가 발생했습니다.');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || '분석 중 오류가 발생했습니다.');
+      } else {
+        setError('분석 중 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }
