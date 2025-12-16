@@ -83,8 +83,8 @@ function Home() {
       return 'bg-red-500';
     } else {
       // final_risk_score는 기본 임계값 사용
-      if (score < 0.3) return 'bg-green-500';
-      if (score < 0.7) return 'bg-yellow-500';
+      if (score < 0.2) return 'bg-green-500';
+      if (score < 0.5) return 'bg-yellow-500';
       return 'bg-red-500';
     }
   };
