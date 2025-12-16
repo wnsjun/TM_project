@@ -43,22 +43,50 @@ function Home() {
 
   const isFormValid = title.trim() !== '' && content.trim() !== '';
 
-  const getScoreColor = (score: number) => {
-    if (score < 0.3) return 'text-green-600';
-    if (score < 0.7) return 'text-yellow-600';
-    return 'text-red-600';
+  const getScoreColor = (score: number, key: string) => {
+    if (key === 'aggro_score') {
+      // aggro_score는 0-100 범위
+      const normalizedScore = score * 100;
+      if (normalizedScore < 40) return 'text-green-600';
+      if (normalizedScore < 60) return 'text-yellow-600';
+      if (normalizedScore < 80) return 'text-orange-600';
+      return 'text-red-600';
+    } else {
+      // mismatch_score, crossref_score는 0-1 범위
+      if (score < 0.45) return 'text-green-600';
+      return 'text-red-600';
+    }
   };
 
-  const getScoreBgColor = (score: number) => {
-    if (score < 0.3) return 'bg-green-100 border-green-200';
-    if (score < 0.7) return 'bg-yellow-100 border-yellow-200';
-    return 'bg-red-100 border-red-200';
+  const getScoreBgColor = (score: number, key: string) => {
+    if (key === 'aggro_score') {
+      const normalizedScore = score * 100;
+      if (normalizedScore < 40) return 'bg-green-100 border-green-200';
+      if (normalizedScore < 60) return 'bg-yellow-100 border-yellow-200';
+      if (normalizedScore < 80) return 'bg-orange-100 border-orange-200';
+      return 'bg-red-100 border-red-200';
+    } else {
+      if (score < 0.45) return 'bg-green-100 border-green-200';
+      return 'bg-red-100 border-red-200';
+    }
   };
 
-  const getProgressBarColor = (score: number) => {
-    if (score < 0.3) return 'bg-green-500';
-    if (score < 0.7) return 'bg-yellow-500';
-    return 'bg-red-500';
+  const getProgressBarColor = (score: number, key?: string) => {
+    if (key === 'aggro_score') {
+      const normalizedScore = score * 100;
+      if (normalizedScore < 40) return 'bg-green-500';
+      if (normalizedScore < 60) return 'bg-yellow-500';
+      if (normalizedScore < 80) return 'bg-orange-500';
+      return 'bg-red-500';
+    } else if (key === 'mismatch_score' || key === 'crossref_score') {
+      if (score < 0.45) return 'bg-green-500';
+      return 'bg-red-500';
+    } else {
+      // final_risk_score는 기본 임계값 사용
+      if (score < 0.3) return 'bg-green-500';
+      if (score < 0.7) return 'bg-yellow-500';
+      return 'bg-red-500';
+    }
   };
 
   const getCategoryLabel = (key: string) => {
@@ -191,13 +219,13 @@ function Home() {
                 {Object.entries(result.breakdown).map(([key, value]) => (
                   <div
                     key={key}
-                    className={`p-5 rounded-lg border ${getScoreBgColor(value.score)}`}
+                    className={`p-5 rounded-lg border ${getScoreBgColor(value.score, key)}`}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-lg font-semibold text-gray-900">
                         {getCategoryLabel(key)}
                       </h4>
-                      <span className={`text-xl font-bold ${getScoreColor(value.score)}`}>
+                      <span className={`text-xl font-bold ${getScoreColor(value.score, key)}`}>
                         {(value.score * 100).toFixed(0)}점
                       </span>
                     </div>
@@ -205,7 +233,7 @@ function Home() {
                     {/* 프로그레스 바 */}
                     <div className="w-full bg-white rounded-full h-2 mb-3">
                       <div
-                        className={`h-2 rounded-full transition-all ${getProgressBarColor(value.score)}`}
+                        className={`h-2 rounded-full transition-all ${getProgressBarColor(value.score, key)}`}
                         style={{ width: `${value.score * 100}%` }}
                       />
                     </div>
